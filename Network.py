@@ -15,7 +15,7 @@ class Network(nn.Module):
             nn.Dropout(0.3),
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(1,64, 5),
+            nn.Conv2d(32,64, 5),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d((2,2), stride=2),
@@ -28,10 +28,12 @@ class Network(nn.Module):
             nn.Linear(512, 64),
         ) 
     def forward(self, x):
-        x = self.conv1(x) # x: d * 32 * 12 * 12
-        x = self.conv2(x) # x: d * 64 * 4 * 4
+        x = self.conv1(x) # x: d * 32 * 12 * 12         
+        x = self.conv2(x) # x: d * 64 * 4 * 4         
         x = x.view(x.size(0), -1) # x: d * (64*4*4)
-        x = self.linear1(x) # x: d *(64)
+        x = self.linear1(x) # x: d *(64)       
+        return x
+
 
 class ContrastiveLoss(nn.Module):
 
