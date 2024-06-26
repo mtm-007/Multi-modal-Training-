@@ -1,0 +1,7 @@
+umap-learn
+umap-learn[plot]
+imgcat
+dask
+plotly
+tqdm
+scikit-learn
