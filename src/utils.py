@@ -46,6 +46,64 @@ def load_latest_checkpoint(checkpoint_dir='checkpoints'):
     
     return net
 
+def plot_activation_stats(activations_list):
+    if not activations_list:
+        print("No activation data to plot.")
+        wandb.log({'message':'No activation data to plot'})
+        return
+
+    for layer_name in activations_list[0].keys():
+        means = [epoch[layer_name]['mean'] for epoch in activations_list]
+        vars = [epoch[layer_name]['var'] for epoch in activations_list]
+        neg_ratios = [epoch[layer_name]['neg_ratio'] for epoch in activations_list]
+
+        # logging this stat only on wandb 
+        #print(f'Plotting data for layer: {layer_name}')
+        wandb.log({'Plotting data for layer':layer_name}) # logging this stat only on wandb 
+        #print(f'Means: {means}')
+        wandb.log({'Means': means})
+        #print(f'Variances: {vars}')
+        wandb.log({'Variances': vars})
+        #print(f'Negative Ratios: {neg_ratios}')
+        wandb.log({'Negative Ratios':neg_ratios})
+
+        plt.figure(figsize=(15, 5))
+        plt.subplot(131)
+        plt.plot(means)
+        plt.title(f'{layer_name} - Mean Activation')
+        plt.xlabel('Batch')
+        plt.ylabel('Mean')
+        
+        plt.subplot(132)
+        plt.plot(vars)
+        plt.title(f'{layer_name} - Activation Variance')
+        plt.xlabel('Batch')
+        plt.ylabel('Variance')
+
+        plt.subplot(133)
+        plt.plot(neg_ratios)
+        plt.title(f'{layer_name} - Negative Activation Ratio')
+        plt.xlabel('Batch')
+        plt.ylabel('Ratio')
+         
+        plt.tight_layout()
+        
+
+        # Save the plot to a buffer
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+
+        # Convert BytesIO to PIL Image
+        image = Image.open(buf)
+
+        # Log the plot to Weights and Biases
+        wandb.log({f'{layer_name} activations': wandb.Image(image)})
+        plt.show() # this should be after wandb log 
+
+        plt.close()  # Close the figure to free up memory
+        buf.close()
+
 def init_weights(model, gain=1.0):
     def init_module(m):
         if isinstance(m, nn.Conv2d):
