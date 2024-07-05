@@ -98,7 +98,7 @@ for batch_idx, (anchor_images, contrastive_images, distances, labels) in enumera
     #break after displaying from one batch for demostration 
     break
 
-
+net = Network()
 device
 
 # optimizer = torch.optim.AdamW(net.parameters(), lr = 3e-4)
