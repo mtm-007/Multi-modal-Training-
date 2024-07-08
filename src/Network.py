@@ -21,118 +21,99 @@ class Network(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1,32, 5),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(1,8, 3, stride=2, padding=1),
+            nn.BatchNorm2d(8),
             #nn.GELU(),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.MaxPool2d((2,2), stride=2),
+            #nn.MaxPool2d((2,2)),
             nn.Dropout(0.3),
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(32,64, 5),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(8,16, 3, stride=2, padding=1),
+            nn.BatchNorm2d(16),
             #nn.GELU(),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.MaxPool2d((2,2), stride=2),
+            #nn.MaxPool2d((2,2)),
             nn.Dropout(0.3),
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64,128, 5),
-            nn.BatchNorm2d(128),
+            nn.Conv2d(16,32, 3, stride=2, padding=1),
+            nn.BatchNorm2d(32),
             #nn.GELU(),
             nn.LeakyReLU(negative_slope=0.01),
-            nn.MaxPool2d((2,2), stride=2),
+            #nn.MaxPool2d((2,2)),
+            nn.Dropout(0.3),
+        )
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(32,64, 3, stride=2, padding=1),
+            nn.BatchNorm2d(64),
+            #nn.GELU(),
+            nn.LeakyReLU(negative_slope=0.01),
+            #nn.MaxPool2d((2,2)),
             nn.Dropout(0.3),
         )
         self.linear1 = nn.Sequential(
-            nn.Linear(64 * 4 * 4, 512),
+            nn.Linear(64 * 2 * 2, 512),
             #nn.GELU(),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(0.3),
             nn.Linear(512, 64),
         ) 
+    
     def forward(self, x):
-        x = self.conv1(x) # x: d * 32 * 12 * 12         
-        x = self.conv2(x) # x: d * 64 * 4 * 4  
-        #x = self.conv3(x)
-        x = x.view(x.size(0), -1) # x: d * (64*4*4)
+        x = self.conv1(x) # x: d * 8 * 14 * 14         
+        x = self.conv2(x) # x: d * 16 * 7 * 7  
+        x = self.conv3(x) # x: d * 32 * 4 * 4
+        x = self.conv4(x) # x: d * 64 * 2 * 2
+        x = x.view(x.size(0), -1) # x: d * (64*2*2)
         x = self.linear1(x) # x: d *(64)       
         return x
 
 #---------
-class Network_wide(nn.Module):
-
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(negative_slope=0.01),
+class CustomVGG(nn.Module):
+    def __init__(self, num_classes=10):
+        super(CustomVGG, self).__init__()
+        
+        # Convolutional layers
+        self.features = nn.Sequential(
+            # First block
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(0.3),
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(0.3),
-        )
-        self.conv3 = nn.Sequential(
+            
+            # Second block
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(negative_slope=0.01),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(0.3),
-        )
-        self.conv4 = nn.Sequential(
+            
+            # Third block
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(negative_slope=0.01),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(0.3),
         )
-        self.linear1 = nn.Sequential(
-            nn.Linear(256 * 2 * 2, 1024),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Dropout(0.3),
+        
+        # Fully connected layers
+        self.classifier = nn.Sequential(
+            nn.Linear(256 * 3 * 3, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(512, num_classes)
         )
-        self.linear2 = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Dropout(0.3),
-        )
-        self.linear3 = nn.Sequential(
-            nn.Linear(512, 64),
-        )
+
     def forward(self, x):
-        print("Input shape:", x.shape)
-        x = self.conv1(x)
-        print("After conv1:", x.shape)
-        x = self.conv2(x)
-        print("After conv2:", x.shape)
-        x = self.conv3(x)
-        print("After conv3:", x.shape)
-        x = self.conv4(x)
-        print("After conv4:", x.shape)
-        x = x.view(x.size(0), -1)
-        print("After flatten:", x.shape)
-        x = self.linear1(x)
-        x = self.linear2(x) # x: d * 512
-        x = self.linear3(x) # x: d * 64
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
         return x
-       
-    
-    # def forward(self, x):
-    #     x = self.conv1(x) # x: d * 32 * 12 * 12
-    #     x = self.conv2(x) # x: d * 64 * 6 * 6
-    #     x = self.conv3(x) # x: d * 128 * 3 * 3
-    #     x = self.conv4(x) # x: d * 256 * 2 * 2
-    #     x = x.view(x.size(0), -1) # x: d * (256*2*2)
-    #     x = self.linear1(x) # x: d * 1024
-    #     x = self.linear2(x) # x: d * 512
-    #     x = self.linear3(x) # x: d * 64
-    #     return x
 
 
 

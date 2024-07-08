@@ -14,6 +14,8 @@ import plotly.graph_objs as go
 import plotly.io as pio 
 pio.renderers.default ='iframe'
 
+
+import torch.nn.init as init
 import wandb
 import random
 import math,os,sys,io
@@ -64,6 +66,11 @@ def plot_activation_stats(activations_list):
         means = [epoch[layer_name]['mean'] for epoch in activations_list]
         vars = [epoch[layer_name]['var'] for epoch in activations_list]
         neg_ratios = [epoch[layer_name]['neg_ratio'] for epoch in activations_list]
+
+        # Ensure data is flattened and converted to numpy arrays
+        means = np.array(means).flatten()
+        vars = np.array(vars).flatten()
+        neg_ratios = np.array(neg_ratios).flatten()
 
         # logging this stat only on wandb 
         #print(f'Plotting data for layer: {layer_name}')
@@ -124,6 +131,18 @@ def init_weights(model, gain=1.0):
     
     # Apply initialization to each module in the model
     model.apply(init_module)
+
+
+def initialize_weights_mod(model, activation_function='relu'):
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            if activation_function == 'relu':
+                init.kaiming_normal_(m.weight, nonlinearity='relu')
+            elif activation_function == 'leaky_relu':
+                init.kaiming_normal_(m.weight, nonlinearity='leaky_relu')
+            if m.bias is not None:
+                init.constant_(m.bias, 0)
+
 
 def init_weights_for_gelu(m):
     if isinstance(m, nn.Conv2d):
