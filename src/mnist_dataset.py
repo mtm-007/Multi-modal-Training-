@@ -64,4 +64,9 @@ class MNISTDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, i):
-        return self.dataset[i]
+        sample = self.dataset[i]  # Assuming this returns a tensor already
+        # Ensure dtype is float32
+        sample = sample.to(torch.float32)
+        
+        return sample
+        #return self.dataset[i]
