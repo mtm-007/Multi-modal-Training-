@@ -1,6 +1,7 @@
 import pandas as pd
 from torch.utils.data import Dataset
 import numpy as np
+import torch
 from tqdm import tqdm
 
 class MNISTDataset(Dataset):
@@ -54,7 +55,30 @@ class MNISTDataset(Dataset):
 
             # append to dataset list. 
             # this random list is created once and used in every epoch
-            dataset.append((first, second, dis, label))
+            # Convert to PyTorch tensors if not already
+            if not isinstance(first, torch.Tensor):
+                first = torch.from_numpy(first)
+            first = first.to(torch.float32)
+    
+            if not is_test:
+                if second is not -1:
+                    if not isinstance(second, torch.Tensor):
+                        second = torch.from_numpy(second)
+                    second = second.to(torch.float32)
+                else:
+                    second = torch.tensor(-1, dtype=torch.float32)
+                dis = torch.tensor(dis, dtype=torch.float32)
+            label = torch.tensor(label, dtype=torch.long)
+    
+            # append to dataset list
+            if is_test:
+                dataset.append((first, label))
+            else:
+                dataset.append((first, second, dis, label))
+            
+            #dataset.append((first, second, dis, label))
+
+            
         
         self.dataset = dataset
         self.transform = transform
@@ -64,9 +88,9 @@ class MNISTDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, i):
-        sample = self.dataset[i]  # Assuming this returns a tensor already
-        # Ensure dtype is float32
-        sample = sample.to(torch.float32)
+        # sample = self.dataset[i]  # Assuming this returns a tensor already
+        # # Ensure dtype is float32
+        # sample = sample.to(torch.float32)
         
-        return sample
-        #return self.dataset[i]
+        # return sample
+        return self.dataset[i]
