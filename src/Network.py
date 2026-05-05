@@ -69,6 +69,15 @@ class Network(nn.Module):
         x = self.linear1(x) # x: d *(64)       
         return x
 
+    @classmethod
+    def create(cls, pretrained=False, **kwargs):
+        model = cls(**kwargs)
+        if pretrained:
+            # Load pretrained weights if available
+            pass
+        return model
+
+
 #---------
 class CustomVGG(nn.Module):
     def __init__(self, num_classes=10):
